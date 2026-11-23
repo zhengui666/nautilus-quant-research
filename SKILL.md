@@ -58,6 +58,8 @@
 
 - Load vendor data into a `ParquetDataCatalog` from `nautilus_trader.persistence.catalog` with the generic `write_data` method, and write the instrument definition before any market data.
 
+- Pull the vendor data with the scripts in `scripts/`: `download_reservoir.py` for 1s candles, `download_cryptohftdata.py` for tick trades and L2, and `download_funding.py` for funding and open interest.
+
 - Sort all vendor data by `ts_init` in ascending order before loading it, since the catalog requires ascending timestamps.
 
 - Map Hyperliquid data to Nautilus types by the mapping in `references/nautilus-api.md`, and never mix data types that cannot drive the venue book type you chose.
@@ -211,5 +213,3 @@
 - Triage factors with fast vectorized screening in pandas or polars first, and run only the survivors through the Nautilus event driven engine.
 
 - Expand the universe only after validation, since the data cost of expanding is negligible and a wider universe adds breadth.
-
-- Record live WebSocket data now, even before the first backtest, since it becomes the validation set for later.

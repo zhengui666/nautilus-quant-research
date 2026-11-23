@@ -68,6 +68,10 @@ scripts/
   check_lookahead.py        scan strategy and factor files for look-ahead bias
   factor_eval.py            IC / ICIR / turnover / decay report from a CSV
   run_walkforward.py        run a backtest over rolling walk-forward windows
+  download_reservoir.py     Reservoir 1s candles from S3 (requester pays)
+  download_cryptohftdata.py CryptoHFTData hourly trades / L2 / funding / OI
+  download_funding.py       official API funding history, plus OI files
+  requirements-data.txt     dependencies for the three data scripts
 evals/
   should-trigger.txt        requests that should trigger this skill
   should-not-trigger.txt    requests that should not
@@ -92,6 +96,46 @@ python scripts/run_walkforward.py backtest.py \
 Hyperliquid Tier 0: maker 0.015%, taker 0.045% on notional, minimum order
 10 USD notional, funding settles hourly. The fill model defaults (100%
 fill, zero slippage) are never used as-is.
+
+## Data scripts
+
+Three scripts pull the backtest data for the agreed plan. Everything is
+free except Reservoir's AWS egress (about $2.40 for the full 16-month 1s
+candle set, $0 inside the AWS 100 GB/month free allowance). No paid
+per-day data is used anywhere: CryptoStruct's 1 EUR per instrument-day
+is deliberately excluded.
+
+```bash
+pip install -r scripts/requirements-data.txt
+
+# 1. Main data: Reservoir 1-second candles (needs AWS credentials that can
+#    pay requester-pays egress; one S3 read per day, filtered by coin)
+python scripts/download_reservoir.py --symbols BTC ETH --start 2025-09-01 --end 2025-09-30
+python scripts/download_reservoir.py --symbols BTC --start 2025-09-01 --end 2025-09-30 --resample 1m
+
+# 2. Slippage modeling: CryptoHFTData tick trades, no key needed
+#    (anonymous tier: 60 files/min/IP; a free key removes the limit)
+python scripts/download_cryptohftdata.py --symbols BTC ETH --start 2025-09-29 --end 2025-10-31
+
+# 3. Depth and spread: CryptoHFTData L2 order book, same command
+python scripts/download_cryptohftdata.py --symbols BTC ETH --start 2025-09-29 --end 2025-10-31 \
+  --data-types orderbook
+
+# 4. Funding + open interest: official API funding history (free, deep)
+#    plus CryptoHFTData hourly OI files with --oi
+python scripts/download_funding.py --symbols BTC ETH --start 2025-07-28 --end 2026-11-23 --oi
+```
+
+All download scripts skip files that already exist, so re-running resumes.
+`--dry-run` prints the plan without downloading. Each script documents
+its source, coverage, schema, and cost in its own header.
+
+Verified 2026-11-24: CryptoHFTData BTC 2026-09-02 downloads match the
+published sample exactly (20,881 trades and 26,120 order book rows in the
+12:00 UTC hour); funding history returns 90 hourly BTC rows for
+2026-11-20 to 2026-11-23. The Reservoir pull was not run
+end to end here because this machine has no AWS credentials; the script
+fails cleanly with a 403 and a message saying credentials are required.
 
 ## License
 
