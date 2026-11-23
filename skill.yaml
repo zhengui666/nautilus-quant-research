@@ -1,0 +1,5 @@
+name: "nautilus_quant_research"
+title: "Nautilus Quant Research"
+description: "Factor research, strategy portfolios and backtesting on NautilusTrader for crypto perpetuals, from data intake through walk-forward validation to live readiness. Use when the user asks for a factor, a backtest, a strategy combination, or validation of a trading idea on NautilusTrader."
+category: "Work and knowledge"
+include_in_prompt: true

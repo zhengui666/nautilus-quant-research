@@ -1,0 +1,11 @@
+User requests that should NOT trigger this skill:
+
+- What is the price of Bitcoin right now
+- Book me a flight to Tokyo
+- Write a birthday message for my friend
+- Explain what Hyperliquid is in general terms
+- Buy 100 USDT of SOL on Binance
+- What time is it in London
+- Summarize this news article about crypto regulation
+- Help me set up my Altare server
+- Translate this paragraph into Chinese

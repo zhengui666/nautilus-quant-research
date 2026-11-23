@@ -1,0 +1,12 @@
+User requests that should trigger this skill:
+
+- Backtest this momentum strategy on Hyperliquid with Nautilus
+- Mine a funding rate factor for small cap perps
+- Check whether my mean reversion factor has real predictive power
+- Combine my momentum, mean reversion, and carry strategies into one portfolio
+- Walk forward validate this strategy before I trade it live
+- Why is my backtest Sharpe 3.5, is it real
+- Build a Nautilus strategy that trades on 1 minute bars
+- How do I load Reservoir 1 second candles into a Nautilus catalog
+- What fill model should I use for thin altcoin books
+- Is this factor overfitted, run the deflated Sharpe check
