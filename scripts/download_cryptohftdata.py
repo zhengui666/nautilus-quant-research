@@ -144,7 +144,9 @@ def main():
         print("error: requests is not installed. Run: pip install requests",
               file=sys.stderr)
         return 2
-    symbols = [s.upper() for s in args.symbols]
+    # Preserve the case the caller gives: some coins are case-sensitive
+    # on the API (kPEPE 500s as KPEPE).
+    symbols = list(args.symbols)
     try:
         start = dt.date.fromisoformat(args.start)
         end = dt.date.fromisoformat(args.end)
