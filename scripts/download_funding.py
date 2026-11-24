@@ -24,6 +24,7 @@ Usage:
     python scripts/download_funding.py --symbols BTC ETH --start 2025-07-28 --end 2026-11-23
     python scripts/download_funding.py --symbols BTC --start 2026-11-20 --end 2026-11-23 --oi
     python scripts/download_funding.py --symbols BTC --start 2025-07-28 --end 2026-11-23 --dry-run
+    python scripts/download_funding.py --symbols BTC --start 2025-07-28 --end 2026-11-23 --delay 2 --retries 8
 
 Output under --out (default ./data/funding):
     funding/{COIN}.parquet        fundingRate as float, time as ms int
@@ -67,23 +68,50 @@ def parse_args():
                         help="Output directory (default ./data/funding)")
     parser.add_argument("--oi", action="store_true",
                         help="Also pull CryptoHFTData hourly open interest files")
+    parser.add_argument("--delay", type=float, default=1.0,
+                        help="Seconds to wait between API calls (default 1.0; "
+                             "raise it if the API answers 429)")
+    parser.add_argument("--retries", type=int, default=5,
+                        help="Retries per page on 429/5xx (default 5, with "
+                             "backoff and Retry-After)")
+    parser.add_argument("--force", action="store_true",
+                        help="Re-download coins whose file already exists")
     parser.add_argument("--dry-run", action="store_true",
                         help="Print the plan without downloading")
     return parser.parse_args()
 
 
-def fetch_funding(session, coin, start_ms, end_ms):
+def fetch_funding(session, coin, start_ms, end_ms, delay, retries):
     rows = []
     cursor = start_ms
     while True:
-        resp = session.post(
-            API_URL,
-            json={"type": "fundingHistory", "coin": coin,
-                  "startTime": cursor, "endTime": end_ms},
-            timeout=60,
-        )
-        resp.raise_for_status()
-        page = resp.json()
+        last_error = None
+        page = None
+        for attempt in range(retries + 1):
+            try:
+                resp = session.post(
+                    API_URL,
+                    json={"type": "fundingHistory", "coin": coin,
+                          "startTime": cursor, "endTime": end_ms},
+                    timeout=60,
+                )
+            except Exception as exc:
+                last_error = str(exc)
+                time.sleep(2 ** attempt)
+                continue
+            if resp.status_code == 200:
+                page = resp.json()
+                break
+            if resp.status_code in (429, 500, 502, 503):
+                wait = int(resp.headers.get("Retry-After", 2 ** attempt))
+                last_error = f"HTTP {resp.status_code}"
+                print(f"{coin}: {last_error}, waiting {wait}s "
+                      f"(attempt {attempt + 1}/{retries + 1})")
+                time.sleep(wait)
+                continue
+            resp.raise_for_status()
+        if page is None:
+            raise RuntimeError(last_error or "funding fetch failed")
         if not page:
             break
         rows.extend(page)
@@ -91,7 +119,7 @@ def fetch_funding(session, coin, start_ms, end_ms):
         if len(page) < PAGE_SIZE or last_time >= end_ms:
             break
         cursor = last_time + 1
-        time.sleep(0.05)
+        time.sleep(delay)
     return rows
 
 
@@ -169,9 +197,13 @@ def main():
     session = requests.Session()
     for symbol in symbols:
         dest = os.path.join(args.out, "funding", f"{symbol}.parquet")
+        if os.path.exists(dest) and not args.force:
+            print(f"{symbol}: already downloaded, skipping")
+            continue
         print(f"{symbol}: fetching funding history...")
         try:
-            rows = fetch_funding(session, symbol, start_ms, end_ms)
+            rows = fetch_funding(session, symbol, start_ms, end_ms,
+                                 args.delay, args.retries)
         except Exception as exc:
             print(f"{symbol}: funding fetch failed: {exc}", file=sys.stderr)
             continue
@@ -188,6 +220,7 @@ def main():
         if args.oi:
             hours, missing = fetch_oi(session, symbol, start, end, args.out)
             print(f"{symbol}: OI files downloaded {hours}, missing hours {missing}")
+        time.sleep(args.delay)
     return 0
 
 
