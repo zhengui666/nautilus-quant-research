@@ -40,7 +40,7 @@
 
 - Run `scripts/check_lookahead.py` on every strategy and factor file before you report any result, and fix every hit it prints.
 
-- Never trade the bar that produced the signal. Compute the signal on bar t and trade at bar t plus 1 or later.
+- Never trade the bar that produced the signal. Compute the signal on bar t and execute only after a later eligible market event for the target instrument. For minute bars alone, use the same instrument's next bar-close state, not a claimed next-open or seconds-level fill.
 
 - Stamp every bar with its close time in `ts_init`, never with its open time, since vendor bars are usually stamped at the open and loading them unchanged makes every bar visible one interval early.
 
@@ -58,7 +58,7 @@
 
 - Load vendor data into a `ParquetDataCatalog` from `nautilus_trader.persistence.catalog` with the generic `write_data` method, and write the instrument definition before any market data.
 
-- Pull the vendor data with the scripts in `scripts/`: `download_reservoir.py` for 1s candles, `download_cryptohftdata.py` for tick trades and L2, and `download_funding.py` for funding and open interest.
+- Start minute-level research with the [published Reservoir 1-minute snapshot](https://huggingface.co/datasets/Hydromancer/hyperliquid-reservoir) when it covers the study. Report missing UTC partitions and per-instrument gaps; do not stitch interrupted periods into one continuous series. Use the approved inputs for other data types: `download_reservoir.py` for requester-pays 1-second S3 candles, `download_cryptohftdata.py` for trades and L2, and `download_funding.py` for funding and open interest.
 
 - Sort all vendor data by `ts_init` in ascending order before loading it, since the catalog requires ascending timestamps.
 
@@ -76,6 +76,13 @@
 
 - Record the data window, the universe rules, and the data SHA with the result.
 
+## Generate and improve factor candidates
+
+- For a new research direction or an iteration on prior results, use the workflow in [Candidate generation and review](references/candidate-loop.md). Generate distinct hypotheses, review their code and economic logic separately, and use measured failures to propose the next candidates.
+- Use only fields verified in the admitted data. One-minute candles are appropriate for minute signals, not for measuring seconds-level fills or order-book behavior.
+- Research multi-factor combinations with distinct mechanisms. Measure each component's incremental contribution against the simpler baseline, and do not count several versions of one signal as independent evidence.
+- Keep candidate selection and feedback inside development windows. No LLM judgment, in-sample score, or factor-only simulation substitutes for chronological, costed NautilusTrader backtests.
+
 ## Factor evaluation
 
 - Do not limit factor types. The taxonomy in `references/factor-evaluation.md` is illustrative examples only, never a whitelist.
@@ -84,7 +91,9 @@
 
 - Evaluate the signal first and the portfolio second, since a feature that does not predict returns cannot be rescued by position management.
 
-- Report the Spearman rank IC, the ICIR, the IC decay by horizon, the quantile monotonicity, the residual IC after neutralization, the turnover, the net IC after costs, the regime stability, and the correlation to known factors for every factor.
+- Report the Spearman rank IC, the ICIR, the IC decay by horizon, the quantile monotonicity, the residual IC after neutralization, the turnover, the regime stability, and the correlation to known factors for every factor.
+
+- Keep predictive IC separate from execution economics: report a turnover-based cost estimate at screening, then realized net results from NautilusTrader when a strategy is tested.
 
 - Judge minute level IC against same horizon baselines, never against daily conventions, since minute level ICs are larger and decay faster.
 
@@ -104,7 +113,7 @@
 
 - Configure the fill model explicitly with `FillModel(prob_fill_on_limit=Decimal("0.2"), prob_slippage=Decimal("0.5"), random_seed=42)`, since the defaults are 100 percent fill and zero slippage.
 
-- Add a `LatencyModel` with a base latency in nanoseconds when the strategy holds for minutes, and state the latency assumption in the report.
+- State the latency assumption and use a `LatencyModel` where the data can resolve the intended delay. For bar-only execution, defer submission explicitly; a latency setting alone does not guarantee the price came from the next target-instrument event.
 
 - Turn on `liquidity_consumption` when the strategy trades size against a thin book, since the simulated fills otherwise never consume the displayed size.
 

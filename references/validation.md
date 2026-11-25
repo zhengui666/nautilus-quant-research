@@ -22,13 +22,13 @@
 
 - Use combinatorial purged cross validation for factor and model validation, not for profit and loss backtests, since training on data after the test fold is never acceptable for profit and loss.
 
-- Split the series into N groups and test all combinations of N choose k. With N equal to 10 and k equal to 2 there are 45 paths.
+- Split the series into N groups and test all combinations of N choose k. With N = 10 and k = 2 there are 45 train/test splits. Their 90 out-of-sample group blocks assemble into 9 complete paths of 10 groups each. Record fits and complete paths separately. Paths share observations and are not independent.
 
 - Purge training observations whose label window overlaps any test label window, using a purge width near the maximum holding period.
 
 - Embargo about 1 percent of observations after each test fold to absorb serial correlation in features.
 
-- Report the distribution of path Sharpes, not the mean. More than 80 percent of paths profitable is Tier 1, more than 65 percent is Tier 2, and under 50 percent is a reject.
+- Report the distribution of path Sharpes, not the mean. More than 80 percent of complete paths profitable (at least 8 of 9 in the example) is Tier 1, more than 65 percent is Tier 2, and under 50 percent is a reject.
 
 ## Deflated Sharpe and overfitting probability
 

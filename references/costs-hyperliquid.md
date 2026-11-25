@@ -64,6 +64,7 @@
 
 - Per data point the engine runs exchange processing first, so resting orders fill against the new market state, then strategy callbacks, then venue settling for newly submitted orders.
 
-- An order submitted inside `on_bar` cannot fill on the bar that triggered it. It fills on subsequent data, and a market order submitted on a bar close executes against the next market state.
+- In 1.231.0, an immediate market order submitted inside `on_bar` can fill against the same bar's closing state. With OHLC-only input, record the intent at signal close and submit it only on the next eligible close for the **same instrument**. Reset a pending intent across a known data gap unless the strategy explicitly defines and validates another policy. This models next-bar-close execution, not execution at the next open. With quotes or trades, a later target-instrument event may support a finer execution model.
+- Test fill **timestamp and price** on the pinned engine. Use distinct closes at the signal and next bar, first with one instrument, then with interleaved instruments in both registration orders. A timestamp alone can miss a stale target price; see [upstream issue #4891](https://github.com/nautechsystems/nautilus_trader/issues/4891). Recheck with the final venue and cost settings before trusting results.
 
 - Bars are delivered on close, and the data engine defaults to stamping built bars at close time.

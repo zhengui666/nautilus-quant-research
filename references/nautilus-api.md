@@ -109,7 +109,7 @@ engine.add_venue(
 
 - Subclass `Strategy` from `nautilus_trader.trading.strategy` and its config from `StrategyConfig`.
 
-- Subscribe in `on_start`, decide only on closed bars in `on_bar`, and never trade the bar that produced the signal.
+- Subscribe in `on_start`, decide only on closed bars in `on_bar`, and defer a bar-only order until the same instrument's next eligible close. The skeleton illustrates timing for one-minute bars, not a validated momentum signal.
 
 ```python
 from decimal import Decimal
@@ -132,19 +132,32 @@ class Momentum(Strategy):
         super().__init__(config)
         self.instrument_id = config.instrument_id
         self.bar_type = config.bar_type
+        self.pending_close_ns = None
 
     def on_start(self):
         self.instrument = self.cache.instrument(self.instrument_id)
         self.subscribe_bars(self.bar_type)
 
     def on_bar(self, bar):
-        if self.portfolio.is_net_flat(self.instrument_id):
+        if bar.bar_type != self.bar_type:
+            return
+        if self.pending_close_ns is not None:
+            if bar.ts_event < self.pending_close_ns:
+                return
+            eligible = bar.ts_event == self.pending_close_ns
+            self.pending_close_ns = None
+            if not eligible or not self.portfolio.is_net_flat(self.instrument_id):
+                return
             order = self.order_factory.market(
                 instrument_id=self.instrument_id,
                 order_side=OrderSide.BUY,
                 quantity=self.instrument.make_qty(self.config.trade_size),
             )
             self.submit_order(order)
+            return
+        # Replace this timing-only example with a causal signal condition.
+        if self.portfolio.is_net_flat(self.instrument_id):
+            self.pending_close_ns = bar.ts_event + 60_000_000_000
 ```
 
 - Available callbacks include `on_bar`, `on_quote_tick`, `on_trade_tick`, `on_order_book_deltas`, `on_funding_rate`, `on_mark_price`, `on_start`, `on_stop`, and the order and position event callbacks.
