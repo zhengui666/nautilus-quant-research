@@ -40,7 +40,7 @@
 
 - Run `scripts/check_lookahead.py` on every strategy and factor file before you report any result, and fix every hit it prints.
 
-- Never trade the bar that produced the signal. Compute the signal on bar t and trade at bar t plus 1 or later.
+- Never trade the bar that produced the signal. Compute the signal on bar t and execute only after a later eligible market event for the target instrument. For minute bars alone, use the same instrument's next bar-close state, not a claimed next-open or seconds-level fill.
 
 - Stamp every bar with its close time in `ts_init`, never with its open time, since vendor bars are usually stamped at the open and loading them unchanged makes every bar visible one interval early.
 
@@ -113,7 +113,7 @@
 
 - Configure the fill model explicitly with `FillModel(prob_fill_on_limit=Decimal("0.2"), prob_slippage=Decimal("0.5"), random_seed=42)`, since the defaults are 100 percent fill and zero slippage.
 
-- Add a `LatencyModel` with a base latency in nanoseconds when the strategy holds for minutes, and state the latency assumption in the report.
+- State the latency assumption and use a `LatencyModel` where the data can resolve the intended delay. For bar-only execution, defer submission explicitly; a latency setting alone does not guarantee the price came from the next target-instrument event.
 
 - Turn on `liquidity_consumption` when the strategy trades size against a thin book, since the simulated fills otherwise never consume the displayed size.
 
