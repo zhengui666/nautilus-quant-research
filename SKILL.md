@@ -58,7 +58,7 @@
 
 - Load vendor data into a `ParquetDataCatalog` from `nautilus_trader.persistence.catalog` with the generic `write_data` method, and write the instrument definition before any market data.
 
-- Pull the vendor data with the scripts in `scripts/`: `download_reservoir.py` for 1s candles, `download_cryptohftdata.py` for tick trades and L2, and `download_funding.py` for funding and open interest.
+- Start minute-level research with the [published Reservoir 1-minute snapshot](https://huggingface.co/datasets/Hydromancer/hyperliquid-reservoir) when it covers the study. Report missing UTC partitions and per-instrument gaps; do not stitch interrupted periods into one continuous series. Use the approved inputs for other data types: `download_reservoir.py` for requester-pays 1-second S3 candles, `download_cryptohftdata.py` for trades and L2, and `download_funding.py` for funding and open interest.
 
 - Sort all vendor data by `ts_init` in ascending order before loading it, since the catalog requires ascending timestamps.
 
@@ -75,6 +75,13 @@
 - Check the data for empty seconds, duplicated fills, and timestamp misalignment before any factor work, and handle each one deliberately instead of silently.
 
 - Record the data window, the universe rules, and the data SHA with the result.
+
+## Generate and improve factor candidates
+
+- For a new research direction or an iteration on prior results, use the workflow in [Candidate generation and review](references/candidate-loop.md). Generate distinct hypotheses, review their code and economic logic separately, and use measured failures to propose the next candidates.
+- Use only fields verified in the admitted data. One-minute candles are appropriate for minute signals, not for measuring seconds-level fills or order-book behavior.
+- Research multi-factor combinations with distinct mechanisms. Measure each component's incremental contribution against the simpler baseline, and do not count several versions of one signal as independent evidence.
+- Keep candidate selection and feedback inside development windows. No LLM judgment, in-sample score, or factor-only simulation substitutes for chronological, costed NautilusTrader backtests.
 
 ## Factor evaluation
 

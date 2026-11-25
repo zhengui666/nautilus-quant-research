@@ -29,7 +29,9 @@ and the failure is reported with evidence instead of proceeding.
 
 1. **Data intake** - vendor data into a `ParquetDataCatalog`, instrument
    defined by hand, dynamic point-in-time universe
-2. **Factor evaluation** - IC / ICIR / decay / turnover / net IC after costs.
+2. **Factor research** - generate candidates, review code and logic, then use
+   measured feedback to iterate. Evaluate with IC, ICIR, decay, turnover,
+   and cost-aware metrics. See the [candidate workflow](references/candidate-loop.md).
    Factor families are **not limited**: any family is admitted or rejected
    by the same gates
 3. **Single-strategy backtest** - everything through the Nautilus engine,
@@ -59,6 +61,7 @@ generic `write_data` method, `BacktestNode` lives in
 skill.yaml                  skill descriptor
 SKILL.md                    pipeline, gates, hard rules, acceptance checklist
 references/
+  candidate-loop.md        hypothesis, review, feedback, and combination workflow
   factor-evaluation.md      universal factor criteria, illustrative taxonomy
   costs-hyperliquid.md      fee / funding / slippage model
   validation.md             walk-forward, CPCV, DSR, PBO, acceptance tiers
@@ -99,11 +102,11 @@ fill, zero slippage) are never used as-is.
 
 ## Data scripts
 
-Three scripts pull the backtest data for the agreed plan. Everything is
-free except Reservoir's AWS egress (about $2.40 for the full 16-month 1s
-candle set, $0 inside the AWS 100 GB/month free allowance). No paid
-per-day data is used anywhere: CryptoStruct's 1 EUR per instrument-day
-is deliberately excluded.
+Start minute-level research with Hydromancer’s [published Reservoir minute
+snapshot](https://huggingface.co/datasets/Hydromancer/hyperliquid-reservoir).
+It is a dated snapshot, not the live S3 archive. The scripts below are for
+other data needs. Reservoir S3 requires AWS credentials and bills the requester
+for requests and applicable transfer. Check the approved budget before use.
 
 ```bash
 pip install -r scripts/requirements-data.txt
@@ -126,9 +129,9 @@ python scripts/download_cryptohftdata.py --symbols BTC ETH --start 2025-09-29 --
 python scripts/download_funding.py --symbols BTC ETH --start 2025-07-28 --end 2026-11-23 --oi
 ```
 
-All download scripts skip files that already exist, so re-running resumes.
-`--dry-run` prints the plan without downloading. Each script documents
-its source, coverage, schema, and cost in its own header.
+Use `--dry-run` to inspect a download plan. For S3, request missing dates
+explicitly: the script opens a day before checking local symbol outputs.
+Each script documents its source and expected data format in its header.
 
 Verified 2026-11-24: CryptoHFTData BTC 2026-09-02 downloads match the
 published sample exactly (20,881 trades and 26,120 order book rows in the
