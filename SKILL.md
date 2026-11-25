@@ -91,7 +91,9 @@
 
 - Evaluate the signal first and the portfolio second, since a feature that does not predict returns cannot be rescued by position management.
 
-- Report the Spearman rank IC, the ICIR, the IC decay by horizon, the quantile monotonicity, the residual IC after neutralization, the turnover, the net IC after costs, the regime stability, and the correlation to known factors for every factor.
+- Report the Spearman rank IC, the ICIR, the IC decay by horizon, the quantile monotonicity, the residual IC after neutralization, the turnover, the regime stability, and the correlation to known factors for every factor.
+
+- Keep predictive IC separate from execution economics: report a turnover-based cost estimate at screening, then realized net results from NautilusTrader when a strategy is tested.
 
 - Judge minute level IC against same horizon baselines, never against daily conventions, since minute level ICs are larger and decay faster.
 

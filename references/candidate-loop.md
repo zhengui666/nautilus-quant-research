@@ -30,8 +30,8 @@ candidate before screening:
 
 ## 2. Review, then measure
 
-Review independently of generation, using a separate pass or reviewer where
-available. Check the formula against the stated hypothesis, dataset schema,
+Review each new or revised candidate independently of generation, using a
+separate pass or reviewer where available. Check the formula against the stated hypothesis, dataset schema,
 event timing, rolling windows, cross-sectional eligibility, and numerical
 behavior. Note violations and changes; count every candidate and repaired
 variant evaluated as a distinct trial. Run the repository look-ahead checker,
@@ -61,7 +61,8 @@ recombine two distinct components and record what changed. Define a bounded
 trial budget before iterating. Keep the trial ledger separate from the number
 of model fits and cross-validation paths.
 
-Reserve a chronological holdout and keep its outcomes out of candidate prompts,
+Reserve a chronological holdout and fix the candidate and evaluation settings
+before opening it. Keep its outcomes out of candidate prompts,
 parameter selection, and feedback. Follow [Validation](validation.md) for
 walk-forward testing. If you revise a candidate after examining a test window,
 treat that window as development and require a fresh unseen test. Report failed

@@ -64,9 +64,9 @@
 
 - Report turnover as the sum of absolute weight changes divided by 2 per period. A common target is 5 to 15 percent daily.
 
-- Compute the break even cost as gross alpha divided by turnover. If it sits below the actual round trip cost, the factor is unprofitable.
+- At screening, report the turnover and an estimated cost per traded notional. Keep this an execution feasibility estimate, not a strategy return.
 
-- Report the net IC after costs, which subtracts cost per unit of turnover times turnover from the IC. The net IC must stay positive after Hyperliquid maker 0.015 percent, taker 0.045 percent, and slippage.
+- Rank IC and ICIR measure prediction, not returns. Do not subtract fees, slippage, or turnover-adjusted returns from IC. For a tested strategy, report net return from the cost-inclusive NautilusTrader run. If estimating a break-even execution cost, divide the return available before those execution costs by traded notional as a fraction of equity over the same test window; compare against a cost quoted on that same notional basis.
 
 - Report capacity as the capital at which IC degrades by about 50 percent. At a few thousand USD, capacity is rarely binding, but per trade slippage on thin books is the binding constraint, not assets under management.
 
